@@ -30,6 +30,18 @@ const textAlign = (value: Cell["h"]) =>
 const isHeaderRow = (row: Cell[]) =>
   row[0]?.v === "IMG" && row[1]?.v === "SKU" && row[2]?.v === "PRICE" && row[3]?.v === "COG";
 
+const prepareRow = (row: Cell[], isHeader: boolean) => {
+  const totalLabel = row.slice(0, 4).find((cell) => cell.v?.endsWith("_TOTALS"))?.v;
+  return row.map((cell, columnIndex) => {
+    if (isHeader && columnIndex === 0) return { ...cell, v: "" };
+    if (totalLabel && columnIndex === 0) {
+      return { ...cell, v: totalLabel, fs: 7, h: "CENTER" as const, va: "MIDDLE" as const };
+    }
+    if (totalLabel && columnIndex >= 1 && columnIndex <= 3) return { ...cell, v: "" };
+    return cell;
+  });
+};
+
 export default function Home() {
   const columns = layout.columnWidths as number[];
   const rows = layout.rowHeights as number[];
@@ -49,7 +61,7 @@ export default function Home() {
     ...usedRows.flatMap((cells, sourceRowIndex) =>
       isHeaderRow(cells) ? [] : [{ cells, sourceRowIndex, isHeader: false }],
     ),
-  ];
+  ].map((row) => ({ ...row, cells: prepareRow(row.cells, row.isHeader) }));
   const gridStyle = {
     gridTemplateColumns: columns.map((width) => `${width}px`).join(" "),
   } satisfies CSSProperties;
